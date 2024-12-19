@@ -30,12 +30,18 @@ const Date = styled.p`
   color: ${props => props.theme.colors.tertiaryText};
 `
 
-const Excerpt = styled.p`
+const Description = styled.p`
   margin-bottom: 32px;
   line-height: 1.7;
   font-size: 15px;
   color: ${props => props.theme.colors.secondaryText};
   word-break: break-all;
+`
+
+const DraftEmoji = styled.span`
+  margin-left: 8px;
+  margin-right: 4px;
+  font-size: 25px;
 `
 
 const checkIsScrollAtBottom = () => {
@@ -70,18 +76,21 @@ const PostList = ({ postList }) => {
   return (
     <PostListWrapper>
       {postList.slice(0, postCount).map((post, i) => {
-        const { title, date, tags } = post.frontmatter
-        const { excerpt } = post
+        const { title, date, tags, description } = post.frontmatter
+        // const { excerpt } = post
         const { slug } = post.fields
 
         return (
           <React.Fragment key={JSON.stringify({ slug, date })}>
             <PostWrapper>
               <Title size="bg">
-                <Link to={slug}>{title}</Link>
+                <Link to={slug}>
+                  {post.frontmatter?.draft === true && <DraftEmoji>💭️</DraftEmoji>}
+                  {title}
+                </Link>
               </Title>
               <Date>{date}</Date>
-              <Excerpt>{excerpt}</Excerpt>
+              <Description>{description}</Description>
               <TagList tagList={tags} />
             </PostWrapper>
 

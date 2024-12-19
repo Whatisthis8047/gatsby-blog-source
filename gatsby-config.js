@@ -11,6 +11,20 @@ module.exports = {
   },
   plugins: [
     `gatsby-plugin-catch-links`,
+    {
+      resolve: `gatsby-source-filesystem`,
+      options: {
+        name: `markdown-pages`,
+        path: `${__dirname}/contents`,
+      },
+    },
+    {
+      resolve: `gatsby-source-filesystem`,
+      options: {
+        name: `posts`,
+        path: `${__dirname}/contents/posts`,
+      },
+    },
     `gatsby-plugin-robots-txt`,
     {
       resolve: `gatsby-plugin-react-redux`,
@@ -37,7 +51,6 @@ module.exports = {
       },
     },
     "gatsby-plugin-styled-components",
-    "gatsby-remark-reading-time",
     `gatsby-plugin-react-helmet`,
     `gatsby-transformer-sharp`,
     `gatsby-plugin-sharp`,
@@ -55,20 +68,16 @@ module.exports = {
       },
     },
     {
-      resolve: `gatsby-source-filesystem`,
+      // resolve: `gatsby-transformer-remark`,
+      resolve: `gatsby-plugin-mdx`,
       options: {
-        name: `markdown-pages`,
-        path: `${__dirname}/contents`,
-      },
-    },
-    {
-      resolve: `gatsby-transformer-remark`,
-      options: {
+        extensions: [`,.md`, `.mdx`],
         commonmark: true,
         footnotes: true,
         pedantic: true,
         gfm: true,
-        plugins: [
+        // plugins: [
+        gatsbyRemarkPlugins: [
           {
             resolve: `gatsby-remark-images`,
             options: {
@@ -142,6 +151,7 @@ module.exports = {
         ],
       },
     },
+    // "gatsby-remark-reading-time",
     `gatsby-plugin-resolve-src`,
     `gatsby-plugin-sitemap`,
     {
@@ -161,27 +171,28 @@ module.exports = {
         `,
         feeds: [
           {
-            serialize: ({ query: { site, allMarkdownRemark } }) => {
-              return allMarkdownRemark.edges.map(edge => {
+            serialize: ({ query: { site, allMdx} }) => {
+              return allMdx.edges.map(edge => {
                 return Object.assign({}, edge.node.frontmatter, {
                   description: edge.node.excerpt,
                   date: edge.node.frontmatter.date,
                   url: site.siteMetadata.siteUrl + edge.node.fields.slug,
                   guid: site.siteMetadata.siteUrl + edge.node.fields.slug,
-                  custom_elements: [{ "content:encoded": edge.node.html }],
+                  custom_elements: [{ "content:encoded": edge.node.excerpt }],
+                  // custom_elements: [{ "content:encoded": edge.node.html }],
+
                 })
               })
             },
             query: `
               {
-                allMarkdownRemark(
-                  sort: { order: DESC, fields: [frontmatter___date] },
-                  filter: { fileAbsolutePath: { regex: "/contents/posts/" } },
+                allMdx(
+                  sort: { frontmatter: {date: DESC} },
+                  filter: { internal: { contentFilePath: { regex: "/contents/posts/" } } },
                 ) {
                   edges {
                     node {
                       excerpt
-                      html
                       fields { slug }
                       frontmatter {
                         title

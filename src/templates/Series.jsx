@@ -89,12 +89,12 @@ export default Series
 
 export const pageQuery = graphql`
   query BlogSeriesBySeriesName($series: String) {
-    posts: allMarkdownRemark(
-      sort: { order: ASC, fields: [frontmatter___date] }
+    posts: allMdx(
+      sort: { frontmatter: { date: ASC } }
       filter: { frontmatter: { series: { eq: $series } } }
     ) {
       nodes {
-        excerpt(pruneLength: 200, truncate: true)
+        excerpt(pruneLength: 200)
         fields {
           slug
         }

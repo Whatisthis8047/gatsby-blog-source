@@ -1,17 +1,21 @@
 const { createFilePath } = require(`gatsby-source-filesystem`)
 const _ = require("lodash")
 
+
 exports.createPages = async ({ graphql, actions, reporter }) => {
   const { createPage } = actions
 
   const postTemplate = require.resolve(`./src/templates/Post.jsx`)
   const seriesTemplate = require.resolve(`./src/templates/Series.jsx`)
+  const aboutTemplate = require.resolve(`./src/templates/About.jsx`)
 
   const result = await graphql(`
     {
-      postsRemark: allMarkdownRemark(
-        sort: { fields: [frontmatter___date], order: ASC }
-        filter: { fileAbsolutePath: { regex: "/contents/posts/" } }
+      postsMdx: allMdx(
+        sort: { frontmatter: { date: ASC }}
+        filter: {
+          internal: { contentFilePath: { regex: "/contents/posts/" } }
+        }
         limit: 1000
       ) {
         nodes {
@@ -19,14 +23,27 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
           fields {
             slug
           }
+          internal {
+            contentFilePath
+          }
           frontmatter {
+            title
+            description
+            date
             series
+            draft
+            tags
           }
         }
       }
-      tagsGroup: allMarkdownRemark(limit: 2000) {
-        group(field: frontmatter___tags) {
+      tagsGroup: allMdx(limit: 2000) {
+        group(field: { frontmatter: { tags: SELECT } }) {
           fieldValue
+        }
+      }
+      about: mdx(internal: { contentFilePath: { regex: "/contents/about/" } }) {
+        internal {
+          contentFilePath
         }
       }
     }
@@ -40,7 +57,8 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
     return
   }
 
-  const posts = result.data.postsRemark.nodes
+  const posts = result.data.postsMdx.nodes
+
   const series = _.reduce(
     posts,
     (acc, cur) => {
@@ -59,7 +77,7 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
 
       createPage({
         path: post.fields.slug,
-        component: postTemplate,
+        component: `${postTemplate}?__contentFilePath=${post.internal.contentFilePath}`,
         context: {
           id: post.id,
           series: post.frontmatter.series,
@@ -82,12 +100,20 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
       })
     })
   }
+  if (result.data.about) {
+    createPage({
+      path: '/about',
+      component: `${aboutTemplate}?__contentFilePath=${result.data.about.internal.contentFilePath}`,
+      context: {},
+    })
+  }
 }
+
 
 exports.onCreateNode = ({ node, actions, getNode }) => {
   const { createNodeField } = actions
 
-  if (node.internal.type === `MarkdownRemark`) {
+  if (node.internal.type === `Mdx`) {
     const slug = createFilePath({ node, getNode })
     const newSlug = `/${slug.split("/").reverse()[1]}/`
 
@@ -102,14 +128,17 @@ exports.onCreateNode = ({ node, actions, getNode }) => {
 exports.createSchemaCustomization = ({ actions }) => {
   const { createTypes } = actions
   const typeDefs = `
-  type MarkdownRemark implements Node {
+  type Mdx implements Node {
     frontmatter: Frontmatter!
   }
   type Frontmatter {
     title: String!
     description: String
+    date: Date! @dateformat
+    update: Date @dateformat
     tags: [String!]!
     series: String
+    draft: Boolean
   }
   `
   createTypes(typeDefs)

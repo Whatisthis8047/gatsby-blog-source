@@ -16,9 +16,8 @@ const Wrapper = styled.div`
   }
 `
 
-const Body = ({ html, hideToc }) => {
+const Body = ({ children, hideToc }) => {
   const [toc, setToc] = useState([])
-
   const [ref, offsetTop] = useOffsetTop()
 
   useEffect(() => {
@@ -32,15 +31,14 @@ const Body = ({ html, hideToc }) => {
   return (
     <Wrapper>
       {hideToc || <Toc items={toc} articleOffset={offsetTop} />}
-
       <PrismTheme />
-
       <StyledMarkdown
         id="article-body"
-        dangerouslySetInnerHTML={{ __html: html }}
         itemProp="articleBody"
         ref={ref}
-      />
+      >
+        {children} {/* dangerouslySetInnerHTML 대신 children을 렌더링 */}
+      </StyledMarkdown>
     </Wrapper>
   )
 }

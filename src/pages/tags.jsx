@@ -3,30 +3,26 @@ import _ from "lodash"
 import styled from "styled-components"
 import SEO from "components/SEO"
 import filter from "lodash/filter"
-
 import { graphql, navigate } from "gatsby"
-
 import queryString from "query-string"
-
 import Layout from "components/Layout"
 import Title from "components/Title"
 import TagList from "components/TagList"
 import PostList from "components/PostList"
 import VerticleSpace from "components/VerticalSpace"
-
 import { title, description, siteUrl } from "../../blog-config"
 
 const TagListWrapper = styled.div`
-  margin-top: 20px;
+    margin-top: 20px;
 
-  @media (max-width: 768px) {
-    padding: 0 15px;
-  }
+    @media (max-width: 768px) {
+        padding: 0 15px;
+    }
 `
 
 const TagsPage = ({ data }) => {
-  const tags = _.sortBy(data.allMarkdownRemark.group, ["totalCount"]).reverse()
-  const posts = data.allMarkdownRemark.nodes
+  const tags = _.sortBy(data.allMdx.group, ["totalCount"]).reverse()
+  const posts = data.allMdx.nodes
 
   const [selected, setSelected] = useState()
   const [filteredPosts, setFilteredPosts] = useState([])
@@ -73,10 +69,8 @@ const TagsPage = ({ data }) => {
           tagList={tags}
           selected={selected}
           onClick={tag => {
-            console.log(tag, selected)
             if (tag === selected) {
               navigate("/tags")
-              alert("zz")
             } else setSelected(tag)
           }}
         />
@@ -98,16 +92,16 @@ export const pageQuery = graphql`
         title
       }
     }
-    allMarkdownRemark(
-      sort: { fields: [frontmatter___date], order: DESC }
-      filter: { fileAbsolutePath: { regex: "/contents/posts/" } }
+    allMdx(
+      sort: { frontmatter: { date: DESC } }
+      filter: { internal: { contentFilePath: { regex: "/contents/posts/" } } }
     ) {
-      group(field: frontmatter___tags) {
+      group(field: { frontmatter: { tags: SELECT } }) {
         fieldValue
         totalCount
       }
       nodes {
-        excerpt(pruneLength: 200, truncate: true)
+        excerpt(pruneLength: 200)
         fields {
           slug
         }

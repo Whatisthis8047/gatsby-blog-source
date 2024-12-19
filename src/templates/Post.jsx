@@ -1,19 +1,18 @@
 import React from "react"
 import SEO from "components/SEO"
 import { graphql } from "gatsby"
-
 import Layout from "components/Layout"
 import Article from "components/Article"
-
 import { siteUrl } from "../../blog-config"
 
-const Post = ({ data }) => {
-  const post = data.markdownRemark
+const Post = ({ data, children }) => {
+  const post = data.mdx
   const { previous, next, seriesList } = data
 
   const { title, date, update, tags, series } = post.frontmatter
   const { excerpt } = post
-  const { readingTime, slug } = post.fields
+  // const { readingTime, slug } = post.fields
+  const { slug } = post.fields
 
   let filteredSeries = []
   if (series !== null) {
@@ -41,12 +40,14 @@ const Post = ({ data }) => {
           date={date}
           update={update}
           tags={tags}
-          minToRead={Math.round(readingTime.minutes)}
+          // minToRead={Math.round(readingTime.minutes)}
         />
         {filteredSeries.length > 0 && (
           <Article.Series header={series} series={filteredSeries} />
         )}
-        <Article.Body html={post.html} />
+        <Article.Body>
+          {children}
+        </Article.Body>
         <Article.Footer previous={previous} next={next} />
       </Article>
     </Layout>
@@ -67,10 +68,9 @@ export const pageQuery = graphql`
         title
       }
     }
-    markdownRemark(id: { eq: $id }) {
+    mdx(id: { eq: $id }) {
       id
-      excerpt(pruneLength: 200, truncate: true)
-      html
+      excerpt(pruneLength: 200)
       frontmatter {
         title
         date(formatString: "MMMM DD, YYYY")
@@ -80,13 +80,10 @@ export const pageQuery = graphql`
       }
       fields {
         slug
-        readingTime {
-          minutes
-        }
       }
     }
-    seriesList: allMarkdownRemark(
-      sort: { order: ASC, fields: [frontmatter___date] }
+    seriesList: allMdx(
+      sort: { frontmatter: { date: ASC } }
       filter: { frontmatter: { series: { eq: $series } } }
     ) {
       edges {
@@ -101,7 +98,7 @@ export const pageQuery = graphql`
         }
       }
     }
-    previous: markdownRemark(id: { eq: $previousPostId }) {
+    previous: mdx(id: { eq: $previousPostId }) {
       fields {
         slug
       }
@@ -109,7 +106,7 @@ export const pageQuery = graphql`
         title
       }
     }
-    next: markdownRemark(id: { eq: $nextPostId }) {
+    next: mdx(id: { eq: $nextPostId }) {
       fields {
         slug
       }

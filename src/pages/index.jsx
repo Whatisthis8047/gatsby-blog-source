@@ -13,8 +13,13 @@ import Tab from "components/Tab"
 import { title, description, siteUrl } from "../../blog-config"
 
 const BlogIndex = ({ data }) => {
-  const posts = data.allMarkdownRemark.nodes
-  const tags = _.sortBy(data.allMarkdownRemark.group, ["totalCount"]).reverse()
+  // 환경에 따라 포스트 필터링
+  const allPosts = data.allMdx.nodes
+  const posts = process.env.NODE_ENV === 'production'
+    ? allPosts.filter(post => !post.frontmatter.draft)
+    : allPosts
+
+  const tags = _.sortBy(data.allMdx.group, ["totalCount"]).reverse()
 
   if (posts.length === 0) {
     return (
@@ -47,24 +52,28 @@ export const pageQuery = graphql`
         title
       }
     }
-    allMarkdownRemark(
-      sort: { fields: [frontmatter___date], order: DESC }
-      filter: { fileAbsolutePath: { regex: "/contents/posts/" } }
+    allMdx(
+      sort: { frontmatter: { date: DESC } }
+      filter: {
+        internal: { contentFilePath: { regex: "/contents/posts/" } }
+      }
     ) {
-      group(field: frontmatter___tags) {
+      group(field: { frontmatter: { tags: SELECT } }) {
         fieldValue
         totalCount
       }
       nodes {
-        excerpt(pruneLength: 200, truncate: true)
+        excerpt(pruneLength: 200)
         fields {
           slug
         }
         frontmatter {
+          description
           date(formatString: "MMMM DD, YYYY")
           update(formatString: "MMM DD, YYYY")
           title
           tags
+          draft
         }
       }
     }
